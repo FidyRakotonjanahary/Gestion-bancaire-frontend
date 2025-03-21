@@ -2,26 +2,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import LoginForm from '../components/features/auth/LoginForm';
+import AuthLayout from '../components/layout/AuthLayout';
 import Card from '../components/common/Card';
 
 const LoginPage = () => {
   return (
-      <Card>
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold">Connexion</h1>
-          <p className="text-gray-600">Connectez-vous à votre compte bancaire</p>
-        </div>
-        
+      <Card className="border-t-4 border-indigo-600 shadow-lg">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Connexion</h1>
+          <p className="text-gray-600 mt-2">Accédez à votre espace bancaire sécurisé</p>
+        </div>        
         <LoginForm />
-        
-        <div className="mt-4 text-center">
-          <p>
-            Vous n'avez pas de compte ?{' '}
-            <Link to="/register" className="text-blue-600 hover:underline">
-              S'inscrire
-            </Link>
-          </p>
-        </div>
       </Card>
   );
 };

@@ -18,7 +18,6 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Récupérer l'URL de redirection après la connexion
   const from = location.state?.from?.pathname || '/dashboard';
 
   const handleChange = (e) => {
@@ -47,7 +46,7 @@ const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && <Alert type="error" message={error} />}
       
       <div>
@@ -58,7 +57,12 @@ const LoginForm = () => {
           value={credentials.username}
           onChange={handleChange}
           required
-          fullWidth
+          leadingIcon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          }
+          placeholder="Entrez votre nom d'utilisateur"
         />
       </div>
       
@@ -70,15 +74,26 @@ const LoginForm = () => {
           value={credentials.password}
           onChange={handleChange}
           required
-          fullWidth
+          leadingIcon={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+          }
+          placeholder="Entrez votre mot de passe"
         />
+      </div>
+      
+      <div className="flex items-center justify-between">
       </div>
       
       <div className="pt-2">
         <Button
           type="submit"
+          variant="primary"
           fullWidth
           disabled={isLoading}
+          loading={isLoading}
+          className="bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
         >
           {isLoading ? 'Connexion en cours...' : 'Se connecter'}
         </Button>
