@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fond circulaire -->
+  <circle cx="32" cy="32" r="30" fill="#0066cc"/>
+  
+  <!-- Bâtiment de banque -->
+  <rect x="16" y="28" width="32" height="20" fill="#ffffff"/>
+  
+  <!-- Toit -->
+  <polygon points="32,12 12,28 52,28" fill="#ffffff"/>
+  
+  <!-- Piliers / Colonnes -->
+  <rect x="20" y="28" width="4" height="20" fill="#0066cc"/>
+  <rect x="30" y="28" width="4" height="20" fill="#0066cc"/>
+  <rect x="40" y="28" width="4" height="20" fill="#0066cc"/>
+  
+  <!-- Base -->
+  <rect x="14" y="48" width="36" height="4" fill="#ffffff"/>
+  
+  <!-- Symbole $ -->
+  <text x="32" y="38" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#0066cc">€</text>
+</svg>

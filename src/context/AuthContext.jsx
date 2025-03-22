@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 
@@ -85,16 +84,28 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkPermission = (permissionName) => {
-    // Cette fonction pourrait être étendue pour vérifier les permissions utilisateur
-    // Pour l'instant, on vérifie simplement si l'utilisateur est admin
     if (!user) return false;
     
     // Admin a toutes les permissions
-    if (user.role_id === 1) return true;
+    if (user.role_id === 1 || user.role === 'ADMIN') return true;
     
-    // Vous pourriez implémenter une vérification plus détaillée des permissions ici
-    // en utilisant un service dédié ou des données stockées
+    // Vérifier dans les permissions de l'utilisateur si disponibles
+    if (user.permissions && Array.isArray(user.permissions)) {
+      return user.permissions.includes(permissionName);
+    }
+    
     return false;
+  };
+
+  const hasRole = (roleName) => {
+    if (!user) return false;
+    
+    // Vérifier si l'utilisateur a le rôle spécifié
+    if (roleName === 'ADMIN' && user.role_id === 1) return true;
+    if (roleName === 'USER' && user.role_id === 2) return true;
+    
+    // Vérifier en utilisant la propriété role si disponible
+    return user.role === roleName;
   };
 
   return (
@@ -106,7 +117,13 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        checkPermission
+        checkPermission,
+        hasRole,
+        // Exposer directement les informations spécifiques demandées
+        userId: user?.id,
+        token: user?.token || authService.getToken(),
+        userRole: user?.role || (user?.role_id === 1 ? 'ADMIN' : 'USER'),
+        userPermissions: user?.permissions || []
       }}
     >
       {children}
