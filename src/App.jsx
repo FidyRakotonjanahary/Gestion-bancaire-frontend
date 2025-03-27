@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate  } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -18,7 +18,7 @@ import DashboardPage from './pages/DashboardPage';
 // import ClientDetailPage from './pages/ClientDetailPage';
 // import VersementsPage from './pages/VersementsPage';
 // import VersementDetailPage from './pages/VersementDetailPage';
-// import UsersPage from './pages/UsersPage';
+import UsersPage from './pages/UsersPage';
 // import UserDetailPage from './pages/UserDetailPage';
 // import ProfilePage from './pages/ProfilePage';
 // import AuditPage from './pages/AuditPage';
@@ -48,16 +48,16 @@ function App() {
           />
           
           <Routes>
-           {/* Routes publiques */}
-           <Route element={<AuthLayout />}>
+            {/* Routes publiques */}
+            <Route element={<AuthLayout />}>
               <Route path="/login" element={<LoginPage />} />
-          </Route>
+            </Route>
             
             {/* Redirection de la page d'accueil vers le tableau de bord */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Routes protégées */}
-            /* <Route path="/dashboard" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <MainLayout>
                   <DashboardPage />
@@ -65,79 +65,83 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* // <Route path="/clients" element={
-            //   <ProtectedRoute requiredPermission="client_read">
-            //     <MainLayout>
-            //       <ClientsPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            {/* 
+            <Route path="/clients" element={
+              <ProtectedRoute requiredPermission="client_read">
+                <MainLayout>
+                  <ClientsPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/clients/:id" element={
-            //   <ProtectedRoute requiredPermission="client_read">
-            //     <MainLayout>
-            //       <ClientDetailPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/clients/:id" element={
+              <ProtectedRoute requiredPermission="client_read">
+                <MainLayout>
+                  <ClientDetailPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/versements" element={
-            //   <ProtectedRoute requiredPermission="versement_read">
-            //     <MainLayout>
-            //       <VersementsPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/versements" element={
+              <ProtectedRoute requiredPermission="versement_read">
+                <MainLayout>
+                  <VersementsPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/versements/:id" element={
-            //   <ProtectedRoute requiredPermission="versement_read">
-            //     <MainLayout>
-            //       <VersementDetailPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/versements/:id" element={
+              <ProtectedRoute requiredPermission="versement_read">
+                <MainLayout>
+                  <VersementDetailPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
+            */}
             
-            // <Route path="/users" element={
-            //   <ProtectedRoute requiredPermission="user_read">
-            //     <MainLayout>
-            //       <UsersPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <UsersPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/users/:id" element={
-            //   <ProtectedRoute requiredPermission="user_read">
-            //     <MainLayout>
-            //       <UserDetailPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            {/*
+            <Route path="/users/:id" element={
+              <ProtectedRoute requiredPermission="user_read">
+                <MainLayout>
+                  <UserDetailPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/profile" element={
-            //   <ProtectedRoute>
-            //     <MainLayout>
-            //       <ProfilePage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProfilePage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/audit" element={
-            //   <ProtectedRoute requiredPermission="audit_read">
-            //     <MainLayout>
-            //       <AuditPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/audit" element={
+              <ProtectedRoute requiredPermission="audit_read">
+                <MainLayout>
+                  <AuditPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
-            // <Route path="/permissions" element={
-            //   <ProtectedRoute requiredPermission="permission_manage">
-            //     <MainLayout>
-            //       <PermissionsPage />
-            //     </MainLayout>
-            //   </ProtectedRoute>
-            // } />
+            <Route path="/permissions" element={
+              <ProtectedRoute requiredPermission="permission_manage">
+                <MainLayout>
+                  <PermissionsPage />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
+            */}
             
-            // {/* Page 404 */}
+            {/* Page 404 */}
             <Route path="*" element={<NotFoundPage />} />  
           </Routes>
         {/* </SocketProvider> */}

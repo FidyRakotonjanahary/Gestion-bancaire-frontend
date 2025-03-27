@@ -1,7 +1,6 @@
-// src/services/api.js
 import axios from 'axios';
+import authService from './authService';
 
-// Créer une instance Axios avec la configuration de base
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
@@ -9,11 +8,14 @@ const api = axios.create({
   }
 });
 
-// Intercepteur pour ajouter le token d'authentification à chaque requête
+// Limiter le nombre de tentatives de rafraîchissement
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 2;
+
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
+    const token = authService.getToken();
+    if (token && authService.isTokenValid()) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
@@ -21,37 +23,56 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercepteur pour gérer les erreurs d'authentification
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Rediriger vers la page de connexion si le token est invalide ou expiré
-      if (error.response.data.reason === 'token_expired' || 
-          error.response.data.message.includes('token')) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Conditions de rafraîchissement du token
+    const is401Or403 = [401, 403].includes(error.response?.status);
+    const isNotRetried = !originalRequest._retry;
+
+    if (is401Or403 && isNotRetried && refreshAttempts < MAX_REFRESH_ATTEMPTS) {
+      originalRequest._retry = true;
+      refreshAttempts++;
+
+      try {
+        const refreshResult = await authService.refreshToken();
+        
+        if (refreshResult) {
+          // Réinitialiser les tentatives après un succès
+          refreshAttempts = 0;
+          return api(originalRequest);
+        } else {
+          // Déconnexion propre
+          await authService.logout();
+        }
+      } catch (refreshError) {
+        console.error('Erreur de rafraîchissement du token:', refreshError);
+        await authService.logout();
       }
     }
+
+    // Réinitialiser les tentatives si échec
+    refreshAttempts = 0;
     return Promise.reject(error);
   }
 );
 
-// Méthodes utilitaires
 const apiService = {
   get: (url, config = {}) => api.get(url, config),
   post: (url, data = {}, config = {}) => api.post(url, data, config),
   put: (url, data = {}, config = {}) => api.put(url, data, config),
   delete: (url, config = {}) => api.delete(url, config),
 
-  // Méthodes pour gérer les headers d'authentification
   setAuthHeader: (token) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   },
   removeAuthHeader: () => {
     delete api.defaults.headers.common['Authorization'];
-  }
+  },
+
+  instance: api
 };
 
 export default apiService;

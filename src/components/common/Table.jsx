@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const Table = ({
   columns,
-  data,
+  data = [],
   isLoading = false,
   noDataMessage = "Aucune donnée disponible",
   sorting = null,
@@ -17,6 +17,9 @@ const Table = ({
   dense = false,
   className = ''
 }) => {
+  // S'assurer que data est toujours un tableau et qu'il contient des éléments valides
+  const safeData = Array.isArray(data) ? data : [];
+  
   // Handle sorting
   const handleSort = (column) => {
     if (!column.sortable || !onSort) return;
@@ -49,12 +52,12 @@ const Table = ({
   
   const handleSelectAll = () => {
     if (onSelectAll) {
-      const allSelected = data.length > 0 && selectedRows.length === data.length;
+      const allSelected = safeData.length > 0 && selectedRows.length === safeData.length;
       onSelectAll(!allSelected);
     }
   };
   
-  const allSelected = data.length > 0 && selectedRows.length === data.length;
+  const allSelected = safeData.length > 0 && selectedRows.length === safeData.length;
   
   // Styles
   const tableClasses = `min-w-full divide-y divide-gray-200 ${className}`;
@@ -81,6 +84,7 @@ const Table = ({
                 />
               </th>
             )}
+            
             {columns.map((column) => (
               <th
                 key={column.accessor}
@@ -105,7 +109,7 @@ const Table = ({
                 Chargement...
               </td>
             </tr>
-          ) : data.length === 0 ? (
+          ) : safeData.length === 0 ? (
             <tr>
               <td
                 colSpan={selectable ? columns.length + 1 : columns.length}
@@ -115,26 +119,27 @@ const Table = ({
               </td>
             </tr>
           ) : (
-            data.map((row, rowIndex) => (
+            // Utiliser une vérification supplémentaire pour s'assurer que safeData est valide
+            Array.isArray(safeData) && safeData.map((row, rowIndex) => (
               <tr
-                key={row.id || rowIndex}
+                key={row?.id || rowIndex}
                 className={rowClasses}
-                onClick={() => onRowClick && onRowClick(row)}
+                onClick={() => onRowClick && row && onRowClick(row)}
               >
                 {selectable && (
                   <td className={bodyCellClasses}>
                     <input
                       type="checkbox"
                       className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                      checked={isSelected(row)}
-                      onChange={() => onSelectRow && onSelectRow(row)}
+                      checked={row && isSelected(row)}
+                      onChange={() => onSelectRow && row && onSelectRow(row)}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
                 )}
                 {columns.map((column) => (
                   <td key={column.accessor} className={bodyCellClasses}>
-                    {column.cell ? column.cell(row) : row[column.accessor]}
+                    {row && column.cell ? column.cell(row) : row?.[column.accessor]}
                   </td>
                 ))}
               </tr>
@@ -155,7 +160,7 @@ Table.propTypes = {
       sortable: PropTypes.bool
     })
   ).isRequired,
-  data: PropTypes.array.isRequired,
+  data: PropTypes.array,
   isLoading: PropTypes.bool,
   noDataMessage: PropTypes.string,
   sorting: PropTypes.shape({

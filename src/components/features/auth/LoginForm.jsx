@@ -20,19 +20,45 @@ const LoginForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials(prev => ({ ...prev, [name]: value }));
+    
+    // Validation en temps réel
+    if (name === 'username') {
+      if (value.length < 3) {
+        setError('Le nom d\'utilisateur doit contenir au moins 3 caractères');
+      } else {
+        setError('');
+      }
+    }
+  };
+
+  const validateForm = () => {
+    if (!credentials.username || credentials.username.length < 3) {
+      setError('Veuillez entrer un nom d\'utilisateur valide');
+      return false;
+    }
+    if (!credentials.password || credentials.password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation avant soumission
+    if (!validateForm()) return;
+
     setError('');
     setIsLoading(true);
 
     try {
       const result = await login(credentials);
+      
       if (result.success) {
         navigate(from, { replace: true });
       } else {
-        setError(result.message);
+        setError(result.message || 'Connexion échouée');
       }
     } catch (err) {
       setError('Une erreur est survenue. Veuillez réessayer.');

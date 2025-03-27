@@ -1,43 +1,53 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import useAuth from './useAuth';
 import api from '../services/api';
+import { permissionService } from '../services/permissionService';
 
 const usePermissions = () => {
   const { user, isAuthenticated, token } = useAuth();
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Charger les permissions uniquement quand l'utilisateur est authentifié
   useEffect(() => {
     const fetchPermissions = async () => {
-      if (!isAuthenticated || !user) {
+      // Réinitialiser l'état
+      setLoading(true);
+      setError(null);
+      
+      // Condition plus stricte pour vérifier l'authentification
+      if (!isAuthenticated || !user || !token) {
+        console.log('Debug - Authentification incomplète:', { 
+          isAuthenticated, 
+          userExists: !!user, 
+          tokenExists: !!token 
+        });
         setPermissions([]);
         setLoading(false);
         return;
       }
 
-      // Si les permissions sont déjà dans l'objet utilisateur, les utiliser directement
-      if (user.permissions && Array.isArray(user.permissions)) {
-        setPermissions(user.permissions);
-        setLoading(false);
-        return;
-      }
-
       try {
-        // Configuration de l'en-tête d'autorisation avec le token JWT
         const config = {
           headers: {
             Authorization: `Bearer ${token}`
           }
         };
         
-        // Récupérer les permissions depuis l'API
         const response = await api.get(`/users/${user.id}/permissions`, config);
         
         if (response.data.success) {
-          setPermissions(response.data.data);
+          console.log('Permissions récupérées:', response.data.data);
+          setPermissions(response.data.data || []);
+        } else {
+          console.log('Échec de récupération des permissions');
+          setPermissions([]);
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération des permissions:', error);
+        console.error('Erreur de récupération des permissions:', error);
+        setError('Impossible de récupérer les permissions');
+        setPermissions([]);
       } finally {
         setLoading(false);
       }
@@ -45,6 +55,7 @@ const usePermissions = () => {
 
     fetchPermissions();
   }, [user, isAuthenticated, token]);
+
 
   const hasPermission = (permissionName) => {
     // L'administrateur a toutes les permissions
@@ -75,12 +86,99 @@ const usePermissions = () => {
     // Vérifier en utilisant la propriété role si disponible
     return user.role === roleName;
   };
+  // Charger toutes les permissions
+  const loadAllPermissions = useCallback(async () => {
+    if (!isAuthenticated) {
+      console.error('Impossible de récupérer les permissions - non authentifié');
+      setError('Non authentifié');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await permissionService.getAllPermissions();
+      setPermissions(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors du chargement des permissions');
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  // Charger les permissions d'un utilisateur
+  const loadUserPermissions = useCallback(async (userId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await permissionService.getUserPermissions(userId);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors du chargement des permissions');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Mettre à jour les permissions d'un utilisateur
+  const updateUserPermissions = useCallback(async (userId, permissionsData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await permissionService.updateUserPermissions(userId, permissionsData);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors de la mise à jour des permissions');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Réinitialiser les permissions d'un utilisateur
+  const resetUserPermissions = useCallback(async (userId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await permissionService.resetUserPermissions(userId);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors de la réinitialisation des permissions');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Charger l'historique des permissions
+  const loadPermissionHistory = useCallback(async (userId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await permissionService.getPermissionHistory(userId);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur lors du chargement de l\'historique');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+
 
   return {
     permissions,
     loading,
+    error,
     hasPermission,
-    hasRole
+    hasRole,
+    loadAllPermissions,
+    loadUserPermissions,
+    updateUserPermissions,
+    resetUserPermissions,
+    loadPermissionHistory
   };
 };
 

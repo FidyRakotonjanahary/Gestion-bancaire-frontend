@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 
+const AUTH_TOKEN_KEY = 'auth_token';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -8,54 +9,59 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (authService.isAuthenticated()) {
-          // Récupérer les données utilisateur depuis le stockage local
-          const storedUser = authService.getStoredUser();
-          
-          if (storedUser) {
-            setUser(storedUser);
-            setIsAuthenticated(true);
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        
+        if (token && authService.isTokenValid()) {
+          try {
+            const currentUser = await authService.getCurrentUser();
             
-            // Facultatif: vérifier la validité du token en récupérant les données utilisateur depuis l'API
-            try {
-              const currentUser = await authService.getCurrentUser();
-              if (currentUser) {
-                setUser(currentUser);
-              }
-            } catch (error) {
-              // Si l'API rejette la requête, déconnecter l'utilisateur
+            if (currentUser) {
+              setUser(currentUser);
+              setIsAuthenticated(true);
+            } else {
               await authService.logout();
-              setUser(null);
-              setIsAuthenticated(false);
             }
+          } catch (error) {
+            console.error('Erreur de récupération:', error);
+            await authService.logout();
           }
         }
       } catch (error) {
-        console.error('Erreur d\'initialisation de l\'authentification:', error);
+        console.error('Erreur d\'initialisation:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     initAuth();
   }, []);
 
   const login = async (credentials) => {
     try {
       const response = await authService.login(credentials);
-      if (response.success) {
-        setUser(response.data.user);
+      
+      // Si la connexion réussit
+      if (response.success && response.user) {
+        setUser(response.user);
         setIsAuthenticated(true);
-        return { success: true };
+        return { success: true, user: response.user };
       }
-      return { success: false, message: response.message };
+      
+      // Si la connexion échoue côté serveur
+      return { 
+        success: false, 
+        message: 'Identifiants invalides'
+      };
     } catch (error) {
+      console.error('Erreur de connexion:', error);
+      
       return {
         success: false,
-        message: error.response?.data?.message || 'Erreur lors de la connexion'
+        message: 'Identifiants invalides'
       };
     }
   };
@@ -119,7 +125,6 @@ export const AuthProvider = ({ children }) => {
         logout,
         checkPermission,
         hasRole,
-        // Exposer directement les informations spécifiques demandées
         userId: user?.id,
         token: user?.token || authService.getToken(),
         userRole: user?.role || (user?.role_id === 1 ? 'ADMIN' : 'USER'),

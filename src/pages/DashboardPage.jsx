@@ -4,9 +4,9 @@ import useAuth from '../hooks/useAuth';
 import clientService from '../services/clientService';
 import versementService from '../services/versementService';
 import StatCard from '../components/features/dashboard/StatCard';
-// import ActivityFeed from '../components/features/dashboard/ActivityFeed';
 import Card from '../components/common/Card';
 import Spinner from '../components/common/Spinner';
+import authService from '../services/authService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -34,9 +34,8 @@ const DashboardPage = () => {
         
         // Récupération des clients avec solde positif
         const clientsWithBalanceResponse = await clientService.getClientsWithBalance();
-        console.log('Réponse API clients avec solde:', clientsWithBalanceResponse)
+
         const clientsWithBalance = clientsWithBalanceResponse.data.data;
-        console.log('Clients avec solde formatés:', clientsWithBalance);
         
         // Récupération des versements récents
         const currentDate = new Date();
@@ -63,6 +62,15 @@ const DashboardPage = () => {
     };
     
     fetchDashboardData();
+    const checkAuth = async () => {
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        // Rediriger vers la page de connexion
+        navigate('/login');
+      }
+    };
+  
+    checkAuth();
   }, []);
 
   const handleClientClick = (clientId) => {

@@ -6,6 +6,13 @@ const useForm = (initialValues = {}, validate = () => ({})) => {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const reset = useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+    setTouched({});
+    setIsSubmitting(false);
+  }, [initialValues]);
+
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === 'checkbox' ? checked : value;
@@ -34,13 +41,6 @@ const useForm = (initialValues = {}, validate = () => ({})) => {
     const validationErrors = validate(values);
     setErrors(validationErrors);
   }, [values, validate]);
-
-  const reset = useCallback(() => {
-    setValues(initialValues);
-    setErrors({});
-    setTouched({});
-    setIsSubmitting(false);
-  }, [initialValues]);
 
   const setFieldValue = useCallback((name, value) => {
     setValues(prev => ({
@@ -71,6 +71,8 @@ const useForm = (initialValues = {}, validate = () => ({})) => {
         setIsSubmitting(true);
         try {
           await onSubmit(values);
+          // Réinitialiser le formulaire après une soumission réussie
+          reset();
         } catch (error) {
           console.error('Form submission error:', error);
         } finally {
@@ -78,7 +80,7 @@ const useForm = (initialValues = {}, validate = () => ({})) => {
         }
       }
     };
-  }, [values, validate]);
+  }, [values, validate, reset]);
 
   return {
     values,
@@ -89,7 +91,9 @@ const useForm = (initialValues = {}, validate = () => ({})) => {
     handleBlur,
     handleSubmit,
     reset,
-    setFieldValue
+    setFieldValue,
+    setValues,
+    validate
   };
 };
 
