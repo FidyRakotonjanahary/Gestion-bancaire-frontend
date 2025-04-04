@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaIdBadge, 
-  FaCheckCircle, FaExclamationTriangle, FaInfoCircle 
+  FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaPlus
 } from 'react-icons/fa';
 import Input from '../../common/Input';
 import Button from '../../common/Button';
@@ -65,6 +65,7 @@ const UserForm = ({
   const [loadingRoles, setLoadingRoles] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [enablePasswordFields, setEnablePasswordFields] = useState(!isEditMode);
 
   const initialValues = {
     username: '',
@@ -186,16 +187,13 @@ const UserForm = ({
     }
     
     // Advanced password validation
-    if (!isEditMode || values.password) {
+    if ((!isEditMode || enablePasswordFields) && values.password) {
       if (!isEditMode && !values.password) {
         validationErrors.password = "Le mot de passe est requis";
       } else if (values.password) {
         if (values.password.length < 8) {
           validationErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
         }
-        // if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])/.test(values.password)) {
-        //   validationErrors.password = "Le mot de passe doit contenir des majuscules, minuscules, chiffres et caractères spéciaux";
-        // }
       }
       
       if (values.password !== values.confirm_password) {
@@ -204,7 +202,7 @@ const UserForm = ({
     }
     
     return validationErrors;
-  }, [values, isEditMode]);
+  }, [values, isEditMode, enablePasswordFields]);
 
   // Submission handler with enhanced error management
   const handleSubmit = async (e) => {
@@ -230,7 +228,7 @@ const UserForm = ({
       is_active: values.is_active
     };
     
-    if (!isEditMode || values.password) {
+    if ((!isEditMode || enablePasswordFields) && values.password) {
       userData.password = values.password;
     }
     
@@ -239,18 +237,14 @@ const UserForm = ({
       if (isEditMode) {
         const userId = id || user.id;
         response = await apiService.put(`/users/${userId}`, userData);
-        toast.success("Profil utilisateur mis à jour avec succès", {
-          icon: <FaCheckCircle className="text-green-500" />
-        });
+        
         
         if (onUserUpdated) {
           onUserUpdated(response.data.data);
         }
       } else {
         response = await apiService.post('/users', userData);
-        toast.success("Nouvel utilisateur créé avec succès", {
-          icon: <FaCheckCircle className="text-green-500" />
-        });
+        
         
         if (onUserCreated) {
           onUserCreated(response.data.data);
@@ -273,98 +267,108 @@ const UserForm = ({
   if (loading || loadingRoles) return <Spinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-4xl bg-white shadow-md rounded-lg p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            {isEditMode ? 'Modifier le profil' : 'Créer un compte'}
-          </h1>
-          <p className="text-gray-600">
-            {isEditMode 
-              ? 'Mettez à jour vos informations personnelles' 
-              : 'Remplissez le formulaire pour créer un nouveau compte'}
+    <div className="bg-white rounded-xl overflow-hidden">
+      <div className="relative overflow-hidden border-b border-gray-200">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/60 to-purple-100/40 opacity-70"></div>
+        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-300 to-purple-300"></div>
+        
+        <div className="relative z-10 p-6">
+          <p className="text-gray-600 flex items-center">
+            {isEditMode ? (
+              <span className="flex items-center">
+                <FaUser className="h-4 w-4 text-indigo-500 mr-2" />
+                Complétez les champs ci-dessous pour mettre à jour les informations
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <FaPlus className="h-4 w-4 text-indigo-500 mr-2" />
+                Complétez les champs ci-dessous pour créer un nouvel utilisateur
+              </span>
+            )}
           </p>
         </div>
-        
-        {error && (
-          <Alert 
-            variant="danger" 
-            className="mb-6 rounded-lg"
-          >
-            {error}
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Username Input */}
-            <div className="relative">
-              <Input
-                label="Nom d'utilisateur"
-                id="username"
-                name="username"
-                value={values.username}
-                onChange={handleChange}
-                error={errors.username}
-                required
-                autoComplete="username"
-                icon={<FaUser className="text-gray-400" />}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Full Name Input */}
-            <div className="relative">
-              <Input
-                label="Nom complet"
-                id="full_name"
-                name="full_name"
-                value={values.full_name}
-                onChange={handleChange}
-                error={errors.full_name}
-                required
-                autoComplete="name"
-                icon={<FaIdBadge className="text-gray-400" />}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Email Input */}
-            <div className="relative">
-              <Input
-                label="Email"
-                id="email"
-                name="email"
-                type="email"
-                value={values.email}
-                onChange={handleChange}
-                error={errors.email}
-                required
-                autoComplete="email"
-                icon={<FaEnvelope className="text-gray-400" />}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Role Dropdown */}
-            <div>
-              <Dropdown
-                label="Rôle"
-                id="role_id"
-                name="role_id"
-                value={values.role_id}
-                onChange={handleChange}
-                options={roleOptions}
-                error={errors.role_id}
-                required
-                className="w-full"
-              />
-            </div>
-            
-            {/* Active Account Toggle */}
-            {isEditMode && (
-              <div className="col-span-2">
-                <label className="flex items-center space-x-3 text-gray-700">
+      </div>
+      
+      {error && (
+        <Alert 
+          variant="danger" 
+          className="m-6 rounded-lg border border-red-200 bg-red-50"
+        >
+          {error}
+        </Alert>
+      )}
+      
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Username Input */}
+          <div className="group relative">
+            <Input
+              label="Nom d'utilisateur"
+              id="username"
+              name="username"
+              value={values.username}
+              onChange={handleChange}
+              error={errors.username}
+              required
+              autoComplete="username"
+              icon={<FaUser className="text-indigo-400 group-hover:text-indigo-600 transition-colors duration-300" />}
+              className="pl-10 border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+            />
+          </div>
+          
+          {/* Full Name Input */}
+          <div className="group relative">
+            <Input
+              label="Nom complet"
+              id="full_name"
+              name="full_name"
+              value={values.full_name}
+              onChange={handleChange}
+              error={errors.full_name}
+              required
+              autoComplete="name"
+              icon={<FaIdBadge className="text-indigo-400 group-hover:text-indigo-600 transition-colors duration-300" />}
+              className="pl-10 border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+            />
+          </div>
+          
+          {/* Email Input */}
+          <div className="group relative">
+            <Input
+              label="Email"
+              id="email"
+              name="email"
+              type="email"
+              value={values.email}
+              onChange={handleChange}
+              error={errors.email}
+              required
+              autoComplete="email"
+              icon={<FaEnvelope className="text-indigo-400 group-hover:text-indigo-600 transition-colors duration-300" />}
+              className="pl-10 border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+            />
+          </div>
+          
+          {/* Role Dropdown */}
+          <div className="group relative">
+            <Dropdown
+              label="Rôle"
+              id="role_id"
+              name="role_id"
+              value={values.role_id}
+              onChange={handleChange}
+              options={roleOptions}
+              error={errors.role_id}
+              required
+              className="w-full border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+            />
+          </div>
+          
+          {/* Active Account Toggle - Improved Design */}
+          {isEditMode && (
+            <div className="col-span-2">
+              <label className="flex items-center space-x-3 mt-2 mb-4 cursor-pointer group">
+                <div className="relative">
                   <input
                     type="checkbox"
                     name="is_active"
@@ -375,95 +379,149 @@ const UserForm = ({
                         value: e.target.checked
                       }
                     })}
-                    className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                    className="sr-only"
                   />
-                  <span>Compte actif</span>
-                </label>
-              </div>
+                  <div className={`w-12 h-6 rounded-full transition-colors duration-300 ${values.is_active ? 'bg-indigo-500' : 'bg-gray-300'}`}></div>
+                  <div className={`absolute left-0 top-0 bg-white w-6 h-6 rounded-full transition-all duration-300 shadow-md transform ${values.is_active ? 'translate-x-6' : 'translate-x-0'} flex items-center justify-center`}>
+                    {values.is_active && <FaCheckCircle className="text-indigo-500 text-xs" />}
+                  </div>
+                </div>
+                <span className="text-gray-700 group-hover:text-indigo-600 transition-colors duration-300">Compte actif</span>
+              </label>
+            </div>
+          )}
+          
+          {isEditMode && (
+            <div className="col-span-2">
+              <label className="flex items-center space-x-3 mt-2 mb-4 cursor-pointer group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    name="enable_password"
+                    checked={enablePasswordFields}
+                    onChange={(e) => setEnablePasswordFields(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-12 h-6 rounded-full transition-colors duration-300 ${enablePasswordFields ? 'bg-indigo-500' : 'bg-gray-300'}`}></div>
+                  <div className={`absolute left-0 top-0 bg-white w-6 h-6 rounded-full transition-all duration-300 shadow-md transform ${enablePasswordFields ? 'translate-x-6' : 'translate-x-0'} flex items-center justify-center`}>
+                    {enablePasswordFields && <FaLock className="text-indigo-500 text-xs" />}
+                  </div>
+                </div>
+                <span className="text-gray-700 group-hover:text-indigo-600 transition-colors duration-300">Modifier le mot de passe</span>
+              </label>
+            </div>
+          )}
+          
+          {/* Password Input */}
+          <div className="group relative">
+            <Input
+              label={isEditMode ? "Nouveau mot de passe" : "Mot de passe"}
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={values.password}
+              onChange={handleChange}
+              error={errors.password}
+              required={!isEditMode}
+              autoComplete={isEditMode ? "new-password" : "new-password"}
+              icon={<FaLock className="text-indigo-400 group-hover:text-indigo-600 transition-colors duration-300" />}
+              className="pl-10 pr-12 border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+              disabled={isEditMode && !enablePasswordFields}
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className={`absolute right-3 top-11 text-gray-500 hover:text-indigo-600 transition-colors ${isEditMode && !enablePasswordFields ? 'opacity-50 cursor-not-allowed' : ''}`}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              disabled={isEditMode && !enablePasswordFields}
+            >
+              {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+            </button>
+            {values.password && enablePasswordFields && (
+              <PasswordStrengthIndicator password={values.password} />
             )}
-            
-            {/* Password Input */}
-            <div className="relative">
-              <Input
-                label={isEditMode ? "Nouveau mot de passe" : "Mot de passe"}
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={values.password}
-                onChange={handleChange}
-                error={errors.password}
-                required={!isEditMode}
-                autoComplete={isEditMode ? "new-password" : "new-password"}
-                icon={<FaLock className="text-gray-400" />}
-                className="pl-10 pr-12"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 transition-colors"
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              >
-                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-              </button>
-              {values.password && (
-                <PasswordStrengthIndicator password={values.password} />
-              )}
-            </div>
-            
-            {/* Confirm Password Input */}
-            <div className="relative">
-              <Input
-                label="Confirmer le mot de passe"
-                id="confirm_password"
-                name="confirm_password"
-                type={showConfirmPassword ? "text" : "password"}
-                value={values.confirm_password}
-                onChange={handleChange}
-                error={errors.confirm_password}
-                required={!isEditMode || !!values.password}
-                autoComplete="new-password"
-                icon={<FaLock className="text-gray-400" />}
-                className="pl-10 pr-12"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 transition-colors"
-                aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              >
-                {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-              </button>
-            </div>
           </div>
           
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 pt-4">
-            <p className="text-sm text-gray-500 italic flex items-center">
-              <FaInfoCircle className="mr-2" />
-              {isEditMode 
-                ? "Les champs laissés vides resteront inchangés" 
-                : "Tous les champs sont obligatoires"}
-            </p>
-            <div className="flex space-x-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
-                onClick={onClose || (() => navigate('/users'))}
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                variant="primary" 
-                className="w-full sm:w-auto bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-300 ease-in-out"
-              >
-                {isEditMode ? 'Mettre à jour' : 'Créer'}
-              </Button>
-            </div>
+          {/* Confirm Password Input */}
+          <div className="group relative">
+            <Input
+              label="Confirmer le mot de passe"
+              id="confirm_password"
+              name="confirm_password"
+              type={showConfirmPassword ? "text" : "password"}
+              value={values.confirm_password}
+              onChange={handleChange}
+              error={errors.confirm_password}
+              required={!isEditMode || (enablePasswordFields && !!values.password)}
+              autoComplete="new-password"
+              icon={<FaLock className="text-indigo-400 group-hover:text-indigo-600 transition-colors duration-300" />}
+              className="pl-10 pr-12 border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-lg transition-all duration-300"
+              disabled={isEditMode && !enablePasswordFields}
+            />
+            <button 
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className={`absolute right-3 top-11 text-gray-500 hover:text-indigo-600 transition-colors ${isEditMode && !enablePasswordFields ? 'opacity-50 cursor-not-allowed' : ''}`}
+              aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              disabled={isEditMode && !enablePasswordFields}
+            >
+              {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+            </button>
           </div>
-        </form>
-      </div>
+        </div>
+        
+        {/* Form Actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 pt-6 border-t border-gray-100">
+          <p className="text-sm text-gray-500 italic flex items-center">
+            <FaInfoCircle className="mr-2 text-indigo-400" />
+            {isEditMode 
+              ? "Les champs laissés vides resteront inchangés" 
+              : "Tous les champs sont obligatoires"}
+          </p>
+          <div className="flex space-x-3">
+            <button 
+              type="button" 
+              className="
+                group
+                relative
+                px-5 py-2.5
+                border border-gray-200
+                rounded-lg
+                text-gray-600
+                bg-white
+                shadow-sm
+                hover:shadow
+                transition-all duration-300
+                overflow-hidden
+                focus:outline-none focus:ring-2 focus:ring-indigo-200
+              "
+              onClick={onClose || (() => navigate('/users'))}
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <span className="relative z-10">Annuler</span>
+            </button>
+            <button 
+              type="submit" 
+              className="
+                group
+                relative
+                px-5 py-2.5
+                rounded-lg
+                text-white
+                bg-indigo-600
+                shadow-sm
+                hover:shadow
+                transition-all duration-300
+                overflow-hidden
+                focus:outline-none focus:ring-2 focus:ring-indigo-400
+              "
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              <span className="relative z-10">{isEditMode ? 'Mettre à jour' : 'Créer'}</span>
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };

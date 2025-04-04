@@ -1,136 +1,131 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { toast } from 'react-toastify';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  
+  // Initial user check on component mount
   useEffect(() => {
-    const initAuth = async () => {
+    const checkInitialAuth = async () => {
       try {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
-        
-        if (token && authService.isTokenValid()) {
-          try {
-            const currentUser = await authService.getCurrentUser();
-            
-            if (currentUser) {
-              setUser(currentUser);
-              setIsAuthenticated(true);
-            } else {
-              await authService.logout();
-            }
-          } catch (error) {
-            console.error('Erreur de récupération:', error);
-            await authService.logout();
-          }
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
         }
       } catch (error) {
-        console.error('Erreur d\'initialisation:', error);
+        // Silent failure, user will be redirected if needed
       } finally {
         setIsLoading(false);
       }
     };
-  
-    initAuth();
+
+    checkInitialAuth();
   }, []);
 
-  const login = async (credentials) => {
+  // Logout stable memoized
+  const logout = useCallback(async (navigateToLogin = true) => {
     try {
-      const response = await authService.login(credentials);
-      
-      // Si la connexion réussit
-      if (response.success && response.user) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-        return { success: true, user: response.user };
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      if (navigateToLogin) {
+        navigate('/login', { replace: true });
       }
+    }
+  }, [navigate]);
+
+  const login = useCallback(async (credentials) => {
+    try {
+      const result = await authService.login(credentials);
       
-      // Si la connexion échoue côté serveur
+      if (!result.success) {
+        toast.error(result.message);
+        return { success: false };
+      }
+
+      setUser(result.user);
+      setIsAuthenticated(true);
+      
       return { 
-        success: false, 
-        message: 'Identifiants invalides'
+        success: true,
+        user: result.user
       };
-    } catch (error) {
-      console.error('Erreur de connexion:', error);
       
-      return {
-        success: false,
-        message: 'Identifiants invalides'
-      };
-    }
-  };
-
-  const register = async (userData) => {
-    try {
-      const response = await authService.register(userData);
-      if (response.success) {
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-        return { success: true };
-      }
-      return { success: false, message: response.message };
     } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Erreur lors de l\'inscription'
-      };
+      const errorMessage = error.response?.data?.message;
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage };
     }
-  };
+  }, []);
 
-  const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  const checkPermission = (permissionName) => {
+  // Vérification des permissions
+  const checkPermission = useCallback((permissionName) => {
     if (!user) return false;
-    
-    // Admin a toutes les permissions
     if (user.role_id === 1 || user.role === 'ADMIN') return true;
     
-    // Vérifier dans les permissions de l'utilisateur si disponibles
-    if (user.permissions && Array.isArray(user.permissions)) {
-      return user.permissions.includes(permissionName);
+    if (user.permissions) {
+      if (Array.isArray(user.permissions)) {
+        return user.permissions.includes(permissionName);
+      }
+      if (typeof user.permissions === 'string') {
+        return user.permissions.split(',').includes(permissionName);
+      }
+      if (typeof user.permissions === 'object') {
+        return user.permissions[permissionName] === true;
+      }
+    }
+    return false;
+  }, [user]);
+
+  // Vérification des rôles
+  const hasRole = useCallback((roleName) => {
+    if (!user) return false;
+    
+    if (typeof user.role === 'number') {
+      const roleMap = {
+        1: 'ADMIN',
+        2: 'USER'
+      };
+      return roleMap[user.role_id] === roleName;
+    }
+    
+    if (typeof user.role === 'string') {
+      return user.role.toUpperCase() === roleName.toUpperCase();
     }
     
     return false;
-  };
+  }, [user]);
 
-  const hasRole = (roleName) => {
-    if (!user) return false;
-    
-    // Vérifier si l'utilisateur a le rôle spécifié
-    if (roleName === 'ADMIN' && user.role_id === 1) return true;
-    if (roleName === 'USER' && user.role_id === 2) return true;
-    
-    // Vérifier en utilisant la propriété role si disponible
-    return user.role === roleName;
-  };
+  // Mémorisation des valeurs du contexte
+  const contextValue = React.useMemo(() => ({
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    checkPermission,
+    hasRole,
+    userId: user?.id,
+    token: user?.token || authService.getToken(),
+    userRole: user?.role || (user?.role_id === 1 ? 'ADMIN' : 'USER'),
+    userPermissions: user?.permissions || []
+  }), [user, isAuthenticated, isLoading, login, logout, checkPermission, hasRole]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isLoading,
-        login,
-        register,
-        logout,
-        checkPermission,
-        hasRole,
-        userId: user?.id,
-        token: user?.token || authService.getToken(),
-        userRole: user?.role || (user?.role_id === 1 ? 'ADMIN' : 'USER'),
-        userPermissions: user?.permissions || []
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -99,7 +99,7 @@ const StatCard = ({ title, value, icon, onClick, trend }) => {
         <div className="mt-2">
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">{title}</h3>
           <p className={`text-3xl font-bold mt-1 ${theme.textAccent}`}>
-            {value.toLocaleString()}
+            {value !== undefined && value !== null ? value.toLocaleString() : '-'}
           </p>
         </div>
       </div>

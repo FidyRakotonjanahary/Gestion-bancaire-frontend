@@ -6,6 +6,21 @@ const versementService = {
     return await api.get('/versements');
   },
 
+  // Récupérer le nombre de versements (statistiques)
+  getVersementCount: async () => {
+    return await api.get('/versements/stats');
+  },
+
+  // Récupérer les versements par plage de dates
+  getVersementsByDateRange: async (startDate, endDate) => {
+    return await api.get(`/versements/date?start_date=${startDate}&end_date=${endDate}`);
+  },
+
+  // Récupérer les versements d'un client spécifique
+  getVersementsByClient: async (clientId) => {
+    return await api.get(`/versements/client/${clientId}`);
+  },
+
   // Récupérer un versement par son ID
   getVersementById: async (id) => {
     return await api.get(`/versements/${id}`);
@@ -26,19 +41,9 @@ const versementService = {
     return await api.delete(`/versements/${id}`);
   },
 
-  // Récupérer les versements par plage de dates
-  getVersementsByDateRange: async (startDate, endDate) => {
-    return await api.get(`/versements/date?start_date=${startDate}&end_date=${endDate}`);
-  },
-
-  // Récupérer le nombre total de versements
-  getVersementCount: async () => {
-    return await api.get('/versements/stats');
-  },
-
-  // Récupérer les versements d'un client spécifique
-  getVersementsByClient: async (clientId) => {
-    return await api.get(`/versements/client/${clientId}`);
+  // Récupérer l'historique d'audit d'un versement
+  getVersementAuditTrail: async (id) => {
+    return await api.get(`/versements/${id}/audit`);
   }
 };
 

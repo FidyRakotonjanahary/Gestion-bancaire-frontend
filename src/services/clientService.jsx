@@ -28,7 +28,7 @@ const clientService = {
 
   // Récupérer le solde d'un client
   getClientBalance: async (id) => {
-    return await api.get(`/clients/${id}/solde`);
+    return await api.get(`/clients/${id}/balance`);
   },
 
   // Récupérer le compte client par numéro de compte
@@ -58,7 +58,7 @@ const clientService = {
 
   // Récupérer l'historique du solde d'un client
   getClientBalanceHistory: async (id) => {
-    return await api.get(`/clients/${id}/balance-history`);
+    return await api.get(`/clients/${id}/history`);
   }
 };
 

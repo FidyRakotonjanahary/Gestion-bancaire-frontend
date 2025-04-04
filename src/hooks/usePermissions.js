@@ -46,8 +46,15 @@ const usePermissions = () => {
         }
       } catch (error) {
         console.error('Erreur de récupération des permissions:', error);
-        setError('Impossible de récupérer les permissions');
-        setPermissions([]);
+        // Ne pas définir d'erreur pour les erreurs 403, considérer que l'utilisateur
+        // n'a simplement pas de permissions mais reste authentifié
+        if (error.response && error.response.status === 403) {
+          console.log('Permission refusée mais utilisateur toujours authentifié');
+          setPermissions([]);
+        } else {
+          setError('Impossible de récupérer les permissions');
+          setPermissions([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -76,16 +83,23 @@ const usePermissions = () => {
     return false;
   };
 
-  const hasRole = (roleName) => {
+  const hasRole = useCallback((roleName) => {
     if (!user) return false;
     
-    // Vérifier si l'utilisateur a le rôle spécifié
-    if (roleName === 'ADMIN' && user.role_id === 1) return true;
-    if (roleName === 'USER' && user.role_id === 2) return true;
+    // Vérification par ID de rôle
+    if (user.role_id !== undefined) {
+      if (roleName === 'ADMIN') return user.role_id === 1;
+      if (roleName === 'USER') return user.role_id === 2;
+      return false;
+    }
     
-    // Vérifier en utilisant la propriété role si disponible
-    return user.role === roleName;
-  };
+    // Vérification par nom de rôle si disponible
+    if (user.role) {
+      return user.role.toUpperCase() === roleName.toUpperCase();
+    }
+    
+    return false;
+  }, [user]);
   // Charger toutes les permissions
   const loadAllPermissions = useCallback(async () => {
     if (!isAuthenticated) {
